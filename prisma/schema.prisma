@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Models
+model Quiz {
+  id           Int          @id @default(autoincrement())
+  quiz_name    String
+  category     Category[]
+  duration     Int
+  questions    Question[]
+  created_by   String
+  created_date DateTime     @default(now())
+  QuizResult   QuizResult[]
+}
+
+model Question {
+  id           Int      @id @default(autoincrement())
+  title        String
+  answers      Answer[]
+  order        Int
+  parentQuiz   Quiz     @relation(fields: [quizId], references: [id])
+  quizId       Int
+  created_by   String
+  created_date DateTime @default(now())
+
+  @@unique([quizId, order])
+}
+
+model Answer {
+  id             Int      @id @default(autoincrement())
+  content        String
+  order          Int
+  isCorrect      Boolean  @default(false)
+  parentQuestion Question @relation(fields: [questionId], references: [id])
+  questionId     Int
+  created_by     String
+  created_date   DateTime @default(now())
+
+  @@unique([questionId, order])
+}
+
+model Category {
+  id           Int      @id @default(autoincrement())
+  name         String
+  created_by   String
+  created_date DateTime @default(now())
+  quizzes      Quiz[]
+}
+
+model User {
+  id           Int          @id @default(autoincrement())
+  name         String       @unique
+  email        String
+  password     String
+  isAdmin      Boolean      @default(false)
+  created_date DateTime     @default(now())
+  QuizResult   QuizResult[]
+}
+
+model QuizResult {
+  id           Int      @id @default(autoincrement())
+  score        Int
+  // maybe add an answers array to be shown in review mode
+  parentQuiz   Quiz     @relation(fields: [quizId], references: [id])
+  quizId       Int
+  parentUser   User     @relation(fields: [userId], references: [id])
+  userId       Int
+  created_date DateTime @default(now())
+}
