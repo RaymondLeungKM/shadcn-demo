@@ -2,8 +2,13 @@ import Link from "next/link"
 
 import { siteConfig } from "@/config/site"
 import { buttonVariants } from "@/components/ui/button"
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 
-export default function IndexPage() {
+export default async function IndexPage() {
+  const session = await getServerSession(authOptions);
+  console.log(session);
+
   return (
     <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
       <div className="flex max-w-[980px] flex-col items-start gap-2">
@@ -15,6 +20,8 @@ export default function IndexPage() {
           Accessible and customizable components that you can copy and paste
           into your apps. Free. Open Source. And Next.js 13 Ready.
         </p>
+        <h1>Server Session</h1>
+        <pre>{JSON.stringify(session)}</pre>
       </div>
       <div className="flex gap-4">
         <Link

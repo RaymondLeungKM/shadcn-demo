@@ -16,6 +16,13 @@ export const siteConfig = {
     {
       title: "Payment",
       href: "/payment"
+    },
+    {
+      title: "Quiz",
+      href: "/quiz"
+    },
+    {
+      title: ""
     }
   ],
   links: {
