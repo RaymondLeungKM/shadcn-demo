@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const prisma = new PrismaClient();
 
 export interface APIRequest extends Request {
+  headers: any;
   user: {
     id: number;
     name: String;

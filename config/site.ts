@@ -22,7 +22,8 @@ export const siteConfig = {
       href: "/quiz"
     },
     {
-      title: ""
+      title: "Create Quiz",
+      href: "/quiz/create"
     }
   ],
   links: {

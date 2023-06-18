@@ -1,20 +1,37 @@
 "use client"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar"
-import { useSession } from "next-auth/react"
+import Image from "next/image"
+import { User } from "@prisma/client"
+import { AvatarProps } from '@radix-ui/react-avatar'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+
+import { Icons } from "@/components/icons"
 
 import { Button } from "../ui/button"
 
-export default function AvatarButton() {
-  const { data: session } = useSession()
-  console.log(session)
+interface UserAvatarProps extends AvatarProps {
+  user: Pick<User, "image" | "name">
+}
 
+export default function AvatarButton({ user, ...props }: UserAvatarProps) {
   return (
-    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-      <Avatar className="relative place-items-center grid shrink-0 overflow-hidden rounded-full h-8 w-8 mr-2">
-        <AvatarImage src={session?.user?.image!} alt={session?.user?.name!} />
-        {/* Should be a fallback image instead */}
-        <AvatarFallback>{session?.user?.name?.substring(0, 2)}</AvatarFallback>
+    <Button variant="ghost" className="relative h-8 w-8 rounded-full !mr-2">
+      <Avatar {...props}>
+        {user.image ? (
+          <div className="relative aspect-square h-full w-full">
+            <Image
+              fill
+              src={user.image}
+              alt="profile picture"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+        ) : (
+          <AvatarFallback>
+            <span className="sr-only">{user?.name}</span>
+            <Icons.user className="h-4 w-4" />
+          </AvatarFallback>
+        )}
       </Avatar>
     </Button>
   )

@@ -1,23 +1,23 @@
-import { getServerSession } from "next-auth"
-
-import { authOptions } from "@/lib/auth"
+import { User } from "next-auth"
 
 import AvatarButton from "./avatar-button"
-import SignInButton from "./signin-button"
 import SignOutButton from "./signout-button"
 
-export default async function AuthHeader() {
-  const session = await getServerSession(authOptions)
-  console.log(session)
+interface UserAccountNavProps extends React.HTMLAttributes<HTMLDivElement> {
+  user: Pick<User, "name" | "image" | "email">
+}
+
+export default async function AuthHeader({ user }: UserAccountNavProps) {
   return (
     <>
-      {session?.user && (
+      {user && (
         <>
           <SignOutButton />
-          <AvatarButton />
+          <AvatarButton
+            user={{ name: user.name || null, image: user.image || null }}
+          />
         </>
       )}
-      {!session?.user && <SignInButton />}
     </>
   )
 }

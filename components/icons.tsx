@@ -1,4 +1,5 @@
 import {
+  User,
   Loader2,
   LucideProps,
   Moon,
@@ -10,6 +11,7 @@ import {
 export type Icon = LucideIcon
 
 export const Icons = {
+  user: User,
   spinner: Loader2,
   sun: SunMedium,
   moon: Moon,
