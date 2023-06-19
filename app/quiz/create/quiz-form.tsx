@@ -1,10 +1,12 @@
 "use client"
 
+import { type } from "os"
 import React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useFieldArray, useForm } from "react-hook-form"
 import * as z from "zod"
 
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -18,7 +20,66 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { MultiSelect } from "@/components/ui/multi-select"
-import { cn } from "@/lib/utils"
+
+const answerSchema = z.object({
+  content: z.string().min(1),
+  order: z.number(),
+  isCorrect: z.boolean(),
+})
+
+type Answer = z.infer<typeof answerSchema>
+
+// need to manually define this type to avoid typescript error
+type Question = {
+  title: string
+  order: number
+  answers: Answer[]
+}
+
+const questionSchema = z
+  .object({
+    title: z.string().min(10, {
+      message: "The question title must be at least 10 characters!",
+    }),
+    order: z.number(),
+    answers: z.array(
+      z.object({
+        content: z.string().min(1),
+        order: z.number(),
+        isCorrect: z.boolean(),
+      })
+    ),
+  })
+  .superRefine(({ title, order, answers }, ctx) => {
+    const markedAsCorrectAnswersArr = answers.filter(
+      (answer: { isCorrect: boolean }) => answer.isCorrect
+    )
+    if (markedAsCorrectAnswersArr.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "1 answer must be marked as correct per question!",
+        path: ["custom"],
+      })
+    }
+    if (markedAsCorrectAnswersArr.length > 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Only 1 answer should be marked as correct per question!",
+        path: ["custom"],
+      })
+
+      answers.forEach((answer: Answer, index) => {
+        if (answer.isCorrect) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: " ",
+            path: ["answers", index],
+          })
+        }
+      })
+    }
+    return z.NEVER
+  })
 
 const quizFormSchema = z.object({
   quiz_title: z.string().min(1),
@@ -28,21 +89,7 @@ const quizFormSchema = z.object({
   duration: z
     .number()
     .min(1, { message: "Duration must be at least 1 minute!" }),
-  questions: z.array(
-    z.object({
-      title: z.string().min(10, {
-        message: "The question title must be at least 10 characters!",
-      }),
-      order: z.number(),
-    })
-  ),
-  answers: z.array(
-    z.object({
-      content: z.string().min(1),
-      order: z.number(),
-      isCorrect: z.boolean(),
-    })
-  ),
+  questions: z.array(questionSchema),
 })
 
 type QuizFormValues = z.infer<typeof quizFormSchema>
@@ -51,24 +98,50 @@ const defaultValues: Partial<QuizFormValues> = {
   quiz_title: "",
   category: [],
   duration: 0,
-  questions: [],
-  answers: [],
+  questions: [
+    {
+      title: "",
+      order: 0,
+      answers: [
+        {
+          content: "",
+          order: 0,
+          isCorrect: false,
+        },
+        {
+          content: "",
+          order: 1,
+          isCorrect: false,
+        },
+        {
+          content: "",
+          order: 2,
+          isCorrect: false,
+        },
+        {
+          content: "",
+          order: 3,
+          isCorrect: false,
+        },
+      ],
+    },
+  ],
 }
 
 export default function QuizForm() {
   const form = useForm<QuizFormValues>({
-    // resolver: async (data, context, options) => {
-    //   console.log("formData", data)
-    //   console.log(
-    //     "validation result",
-    //     await zodResolver(quizFormSchema)(data, context, options)
-    //   )
-    //   return zodResolver(quizFormSchema)(data, context, options)
-    // },
-    resolver: zodResolver(quizFormSchema),
+    resolver: async (data, context, options) => {
+      console.log("formData", data)
+      console.log(
+        "validation result",
+        await zodResolver(quizFormSchema)(data, context, options)
+      )
+      return zodResolver(quizFormSchema)(data, context, options)
+    },
+    // resolver: zodResolver(quizFormSchema),
     defaultValues,
-    // mode: "onChange",
-    mode: "onSubmit",
+    mode: "onChange", // at the moment, custom refine / superRefine validations can only be revalidated onSubmit T.T
+    // mode: "onSubmit",
   })
 
   const { fields: questions_fields, append: questions_append } = useFieldArray({
@@ -76,39 +149,38 @@ export default function QuizForm() {
     control: form.control,
   })
 
-  const { fields: answers_fields, append: answers_append } = useFieldArray({
-    name: "answers",
-    control: form.control,
-  })
-
   const addQuestionHandler = () => {
-    questions_append({ title: "", order: 0 })
-    answers_append([
-      {
-        content: "",
-        order: 0,
-        isCorrect: false,
-      },
-      {
-        content: "",
-        order: 1,
-        isCorrect: false,
-      },
-      {
-        content: "",
-        order: 2,
-        isCorrect: false,
-      },
-      {
-        content: "",
-        order: 3,
-        isCorrect: false,
-      },
-    ])
+    questions_append({
+      title: "",
+      order: 0,
+      answers: [
+        {
+          content: "",
+          order: 0,
+          isCorrect: false,
+        },
+        {
+          content: "",
+          order: 1,
+          isCorrect: false,
+        },
+        {
+          content: "",
+          order: 2,
+          isCorrect: false,
+        },
+        {
+          content: "",
+          order: 3,
+          isCorrect: false,
+        },
+      ],
+    })
   }
 
   const onSubmit = (values: z.infer<typeof quizFormSchema>) => {
-    console.log("values=", values)
+    console.log("passed all validations");
+    // prepare the form data for submitting to API
   }
 
   return (
@@ -181,15 +253,28 @@ export default function QuizForm() {
           )}
         />
         <div className="question-section space-y-4">
-          {questions_fields.map((q_field, index) => (
+          {questions_fields.map((q_field, qIndex) => (
             <FormField
               control={form.control}
               key={q_field.id}
-              name={`questions.${index}.title`}
+              name={`questions.${qIndex}.title`}
               render={({ field }) => (
-                <div className="question border p-6 md:py-8 md:px-16 rounded-md space-y-4">
+                <div
+                  className={cn(
+                    form.formState.errors?.questions?.[qIndex] &&
+                      "border-red-900",
+                    "question border p-6 md:py-8 md:px-16 rounded-md space-y-4"
+                  )}
+                >
+                  <p className="text-red-900">
+                    {/* Diplay the custom message here */}
+                    {
+                      form.formState.errors?.questions?.[qIndex]?.custom
+                        ?.message
+                    }
+                  </p>
                   <FormItem>
-                    <FormLabel>Question {index + 1}</FormLabel>
+                    <FormLabel>Question {qIndex + 1}</FormLabel>
                     <FormDescription>Title</FormDescription>
                     <FormControl>
                       <Input {...field} />
@@ -197,15 +282,15 @@ export default function QuizForm() {
                     <FormMessage />
                   </FormItem>
                   <div className="answer-section grid md:grid-cols-2 gap-4">
-                    {answers_fields.map((ans_field, index) => (
-                      <div className="answer flex items-end gap-4" key={index}>
+                    {q_field.answers.map((ans_field, aIndex) => (
+                      <div className="answer flex items-end gap-4" key={aIndex}>
                         <FormField
                           control={form.control}
-                          key={"ansContent_" + ans_field.id}
-                          name={`answers.${index}.content`}
+                          key={`question${qIndex}_ansContent${aIndex}`}
+                          name={`questions.${qIndex}.answers.${aIndex}.content`}
                           render={({ field }) => (
                             <FormItem className="flex-1">
-                              <FormLabel>Answer {index + 1}</FormLabel>
+                              <FormLabel>Answer {aIndex + 1}</FormLabel>
                               <FormDescription>Content</FormDescription>
                               <FormControl>
                                 <Input {...field} />
@@ -216,13 +301,26 @@ export default function QuizForm() {
                         />
                         <FormField
                           control={form.control}
-                          key={"isCorrect_" + ans_field.id}
-                          name={`answers.${index}.isCorrect`}
+                          key={`question${qIndex}_ansIsCorrect${aIndex}`}
+                          name={`questions.${qIndex}.answers.${aIndex}.isCorrect`}
                           render={({ field }) => (
                             <FormItem className="flex-none flex flex-col w-12 items-center text-center mt-8 mb-3">
-                              <FormLabel className={cn(index !== 0 && "sr-only", "mb-4", "font-normal")}>Is Correct</FormLabel>
+                              <FormLabel
+                                className={cn(
+                                  aIndex !== 0 && "sr-only",
+                                  "mb-4",
+                                  "font-normal"
+                                )}
+                              >
+                                Is Correct
+                              </FormLabel>
                               <FormControl>
                                 <Checkbox
+                                  className={
+                                    form.formState.errors.questions?.[qIndex]
+                                      ?.answers?.[aIndex] &&
+                                    "border-red-900 !text-red-900"
+                                  }
                                   checked={field.value}
                                   onCheckedChange={field.onChange}
                                 />

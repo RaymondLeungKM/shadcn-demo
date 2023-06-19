@@ -57,7 +57,10 @@ export function MultiSelect({
     []
   )
 
-  const selectables = data.filter((item) => !selected.includes(item))
+  const selectables = data.filter((item) => {
+    const selectedValues = selected.map((s) => s.value)
+    return !selectedValues.includes(item.value)
+  })
 
   React.useEffect(() => {
     onChange(selected)
@@ -81,7 +84,7 @@ export function MultiSelect({
         <div className="group border border-input px-3 py-2 text-sm ring-offset-background rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
           <div className="flex gap-1 flex-wrap">
             {selected.map((item, index) => {
-              if (index > 1) return
+              if (index > 4) return
               return (
                 <Badge key={item.value} variant="secondary">
                   {item.label}
@@ -103,7 +106,7 @@ export function MultiSelect({
                 </Badge>
               )
             })}
-            {selected.length > 2 && <p>{`+${selected.length - 2} more`}</p>}
+            {selected.length > 5 && <p>{`+${selected.length - 5} more`}</p>}
             {/* Avoid having the "Search" Icon */}
             <CommandPrimitive.Input
               ref={inputRef}
