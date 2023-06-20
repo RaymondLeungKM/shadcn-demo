@@ -140,8 +140,8 @@ export default function QuizForm() {
     },
     // resolver: zodResolver(quizFormSchema),
     defaultValues,
-    mode: "onChange", // at the moment, custom refine / superRefine validations can only be revalidated onSubmit T.T
-    // mode: "onSubmit",
+    // mode: "onChange", // at the moment, custom refine / superRefine validations can only be revalidated onSubmit T.T
+    mode: "onSubmit",
   })
 
   const { fields: questions_fields, append: questions_append } = useFieldArray({
@@ -308,6 +308,7 @@ export default function QuizForm() {
                               <FormLabel
                                 className={cn(
                                   aIndex !== 0 && "sr-only",
+                                  "md:not-sr-only",
                                   "mb-4",
                                   "font-normal"
                                 )}
