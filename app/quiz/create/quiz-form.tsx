@@ -3,6 +3,7 @@
 import { type } from "os"
 import React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
+import axios from "axios"
 import { useFieldArray, useForm } from "react-hook-form"
 import * as z from "zod"
 
@@ -82,7 +83,7 @@ const questionSchema = z
   })
 
 const quizFormSchema = z.object({
-  quiz_title: z.string().min(1),
+  quiz_name: z.string().min(1),
   category: z
     .array(z.object({ value: z.string(), label: z.string() }))
     .min(1, { message: "At least 1 category must be chosen" }),
@@ -95,7 +96,7 @@ const quizFormSchema = z.object({
 type QuizFormValues = z.infer<typeof quizFormSchema>
 
 const defaultValues: Partial<QuizFormValues> = {
-  quiz_title: "",
+  quiz_name: "",
   category: [],
   duration: 0,
   questions: [
@@ -179,8 +180,17 @@ export default function QuizForm() {
   }
 
   const onSubmit = (values: z.infer<typeof quizFormSchema>) => {
-    console.log("passed all validations");
+    console.log("passed all validations")
     // prepare the form data for submitting to API
+    console.log("formData=", values)
+    const createdQuiz = axios
+      .post("/api/quiz/create", {
+        quiz_name: values.quiz_name,
+        category: values.category.map((category) => category.value),
+        duration: values.duration,
+        questions: values.questions,
+      })
+      .then((res) => console.log(res))
   }
 
   return (
@@ -188,7 +198,7 @@ export default function QuizForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
-          name="quiz_title"
+          name="quiz_name"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Quiz Title</FormLabel>

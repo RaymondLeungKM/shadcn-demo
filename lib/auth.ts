@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { compare } from "bcryptjs";
-import type { NextAuthOptions } from "next-auth";
+import { NextAuthOptions, getServerSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GithubProvider from "next-auth/providers/github";
 
@@ -77,3 +77,5 @@ export const authOptions: NextAuthOptions = {
     },
   },
 };
+
+export const getAuthSession = () => getServerSession(authOptions)
