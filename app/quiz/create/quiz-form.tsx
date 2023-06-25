@@ -1,7 +1,7 @@
 "use client"
 
-import { type } from "os"
 import React from "react"
+import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import axios from "axios"
 import { useFieldArray, useForm } from "react-hook-form"
@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { MultiSelect } from "@/components/ui/multi-select"
+import { useToast } from "@/components/ui/use-toast"
+import { useQuery } from "@tanstack/react-query"
 
 const answerSchema = z.object({
   content: z.string().min(1),
@@ -31,6 +33,7 @@ const answerSchema = z.object({
 type Answer = z.infer<typeof answerSchema>
 
 // need to manually define this type to avoid typescript error
+// Seems to be redundant for now though
 type Question = {
   title: string
   order: number
@@ -85,7 +88,7 @@ const questionSchema = z
 const quizFormSchema = z.object({
   quiz_name: z.string().min(1),
   category: z
-    .array(z.object({ value: z.string(), label: z.string() }))
+    .array(z.object({ value: z.number(), label: z.string() }))
     .min(1, { message: "At least 1 category must be chosen" }),
   duration: z
     .number()
@@ -127,6 +130,11 @@ const defaultValues: Partial<QuizFormValues> = {
       ],
     },
   ],
+}
+
+const fetchCategories = async () => {
+  const response = await axios.get("/api/quiz/category")
+  return response.data
 }
 
 export default function QuizForm() {
@@ -179,19 +187,40 @@ export default function QuizForm() {
     })
   }
 
-  const onSubmit = (values: z.infer<typeof quizFormSchema>) => {
+  const { toast } = useToast()
+  const router = useRouter()
+
+  const onSubmit = async (values: z.infer<typeof quizFormSchema>) => {
     console.log("passed all validations")
     // prepare the form data for submitting to API
     console.log("formData=", values)
-    const createdQuiz = axios
+    const createdQuiz = await axios
       .post("/api/quiz/create", {
         quiz_name: values.quiz_name,
         category: values.category.map((category) => category.value),
         duration: values.duration,
         questions: values.questions,
       })
-      .then((res) => console.log(res))
+      .then((res) => {
+        if (res.status === 201) {
+          toast({
+            title: "Created Quiz successfully!",
+          })
+          router.push("/quiz")
+        } else {
+          toast({
+            title: "Something went wrong!",
+            description: res.data.message,
+          })
+        }
+      })
   }
+
+  const { data: categories } = useQuery({
+    queryFn: async () => fetchCategories(),
+    queryKey: ["category"],
+    placeholderData: []
+  })
 
   return (
     <Form {...form}>
@@ -220,20 +249,12 @@ export default function QuizForm() {
                   onChange={(e) => field.onChange(e)}
                   label=""
                   placeholder="Select categories"
-                  data={[
-                    {
-                      value: "Physics",
-                      label: "Physics",
-                    },
-                    {
-                      value: "Chemistry",
-                      label: "Chemistry",
-                    },
-                    {
-                      value: "Biology",
-                      label: "Biology",
-                    },
-                  ]}
+                  data={categories.map((category: { id: number, name: string}) => {
+                    return {
+                      value: category.id,
+                      label: category.name
+                    }
+                  })}
                 />
               </FormControl>
               <FormMessage />

@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server"
 import { z } from "zod"
 
 import { getAuthSession } from "@/lib/auth"
@@ -13,12 +14,12 @@ export async function POST(req: Request) {
   } else {
     try {
       const username = session.user.name
-      const reqBody = await req.json();
+      const reqBody = await req.json()
 
       const { quiz_name, category, duration, questions } = z
         .object({
           quiz_name: z.string(),
-          category: z.array(z.string()),
+          category: z.array(z.number()),
           duration: z.number(),
           questions: z.array(
             z.object({
@@ -36,11 +37,11 @@ export async function POST(req: Request) {
         })
         .parse(reqBody)
 
-      console.log("passed zod checking");
+      console.log("passed zod checking")
 
       const categories = await prisma.category.findMany({
         where: {
-          name: {
+          id: {
             in: category,
           },
         },
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
         },
       })
 
-      console.log("categories=", categories);
+      console.log("categories=", categories)
 
       const newQuiz = await prisma.quiz.create({
         data: {
@@ -111,7 +112,7 @@ export async function POST(req: Request) {
         },
       })
       console.log(createdQuiz)
-      return new Response(JSON.stringify(createdQuiz), { status: 201 })
+      return NextResponse.json(createdQuiz, { status: 201 })
     } catch (error) {
       return new Response("Could not create quiz", { status: 500 })
     }

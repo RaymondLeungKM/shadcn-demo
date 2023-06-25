@@ -7,8 +7,9 @@ import { cn } from "@/lib/utils"
 import { SiteHeader } from "@/components/site-header"
 import { TailwindIndicator } from "@/components/tailwind-indicator"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/toaster"
 
-import { NextAuthProvider } from "./providers"
+import Providers from "./providers"
 
 export const metadata: Metadata = {
   title: {
@@ -42,15 +43,16 @@ export default function RootLayout({ children }: RootLayoutProps) {
             fontSans.variable
           )}
         >
-          <NextAuthProvider>
+          <Providers>
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+              <Toaster />
               <div className="relative flex min-h-screen flex-col">
                 <SiteHeader />
                 <div className="flex flex-1 container max-w-[1200px] mt-8">{children}</div>
               </div>
               <TailwindIndicator />
             </ThemeProvider>
-          </NextAuthProvider>
+          </Providers>
         </body>
       </html>
     </>
